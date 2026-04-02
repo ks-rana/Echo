@@ -1,48 +1,170 @@
-// --- THE TRUE CONTEXT REWRITE ENGINE ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECHO — close the loop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:ital,wght@0,300;0,400;1,300&family=Figtree:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#07080c;--deep:#0c0e16;--surf:#121520;--lift:#1a1e2e;
+  --bdr:rgba(255,255,255,.06);--bdr2:rgba(255,255,255,.11);
+  --text:#e6e4f0;--muted:#6a6880;--dim:#38364a;
+  --blue:#6b8cff;--blue2:#9eb3ff;--teal:#5bb8a8;--rose:#e8809a;--gold:#d4a96a;--green:#6bc98a;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;background:var(--void);cursor:none;}
+body{font-family:'Figtree', sans-serif;font-weight:300;color:var(--text);}
+
+/* CURSOR */
+#cur-ring{position:fixed;z-index:9999;pointer-events:none;width:22px;height:22px;border-radius:50%;border:1px solid rgba(107,140,255,.45);transform:translate(-50%,-50%);transition:width .18s,height .18s;}
+#cur-dot{position:fixed;z-index:9999;pointer-events:none;width:3px;height:3px;border-radius:50%;background:rgba(107,140,255,.85);transform:translate(-50%,-50%);}
+#bg{position:fixed;inset:0;z-index:0;pointer-events:none;}
+
+#app{position:relative;z-index:10;height:100vh;width:100vw;overflow:hidden;}
+#prog{position:fixed;bottom:0;left:0;z-index:50;height:1px;background:var(--blue);transition:width .7s ease;}
+
+.stage{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .7s ease;}
+.stage.on{opacity:1;pointer-events:all;}
+
+/* STYLING */
+.echo-logo{font-family:'Instrument Serif', serif;font-size:clamp(5rem,14vw,10rem);letter-spacing:-.04em;line-height:.88;margin-bottom:1rem;}
+.echo-tag{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.28em;text-transform:uppercase;color:var(--muted);margin-bottom:3rem;}
+.start-btn{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;padding:.85rem 2.4rem;background:transparent;border:1px solid rgba(107,140,255,.28);color:var(--blue);cursor:pointer;transition:0.3s;}
+.start-btn:hover{background:rgba(107,140,255,.1);border-color:var(--blue);}
+
+.wlayout{display:grid;grid-template-columns:1fr 1fr;height:100vh;width:100%;}
+.wleft{padding:3.5rem;border-right:1px solid var(--bdr);display:flex;flex-direction:column;background:rgba(107,140,255,.01);}
+.warea{flex:1;background:transparent;border:none;resize:none;color:var(--text);font-family:'Instrument Serif',serif;font-size:1.2rem;line-height:1.8;outline:none;padding:10px 0;}
+.wright{padding:3.5rem;display:flex;flex-direction:column;overflow-y:auto;}
+
+.tbtn{padding:.45rem .9rem;background:transparent;border:1px solid var(--bdr);color:var(--dim);font-family:'DM Mono',monospace;font-size:.44rem;text-transform:uppercase;cursor:pointer;margin-right:5px;}
+.tbtn.on{border-color:var(--blue);color:var(--blue2);}
+
+.ai-item{display:block;width:100%;padding:1rem;margin-bottom:.5rem;background:rgba(255,255,255,.02);border:1px solid var(--bdr);color:var(--muted);text-align:left;font-family:'Instrument Serif';font-style:italic;cursor:pointer;transition:0.3s;}
+.ai-item:hover{border-color:var(--blue);color:white;}
+.ai-res{margin-top:20px; animation:fadeIn 0.5s ease;}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<div id="cur-ring"></div>
+<div id="cur-dot"></div>
+<canvas id="bg"></canvas>
+<div id="prog"></div>
+
+<div id="app">
+    <div class="stage on" id="s0">
+        <div class="echo-logo">EC<i>H</i>O</div>
+        <div class="echo-tag">archive the loop · release the thought</div>
+        <button class="start-btn" onclick="go(1)">begin</button>
+    </div>
+
+    <div class="stage" id="s1">
+        <h2 style="font-family:'Instrument Serif'; font-size:2.5rem; margin-bottom:1rem;">What song started it?</h2>
+        <input id="song-inp" style="background:transparent; border:none; border-bottom:1px solid var(--bdr2); color:white; font-size:1.5rem; outline:none; text-align:center;" placeholder="...">
+        <button class="start-btn" style="margin-top:30px;" onclick="goWrite()">continue</button>
+    </div>
+
+    <div class="stage" id="s2">
+        <div class="wlayout">
+            <div class="wleft">
+                <div style="font-family:'DM Mono'; font-size:.6rem; color:var(--blue); margin-bottom:1rem;" id="sc-name">♪ SONG</div>
+                <textarea class="warea" id="warea" placeholder="Start rambling..."></textarea>
+            </div>
+            <div class="wright">
+                <div style="font-family:'Instrument Serif'; font-size:1.5rem; margin-bottom:1.5rem;">The Lore Rewrite</div>
+                <div style="margin-bottom:20px;">
+                    <button class="tbtn" data-tone="sob" onclick="setTone(this)">sob</button>
+                    <button class="tbtn" data-tone="giggle" onclick="setTone(this)">giggle</button>
+                    <button class="tbtn" data-tone="neutral" onclick="setTone(this)">neutral</button>
+                </div>
+                <button class="start-btn" onclick="genEndings()">✦ Generate Aesthetic Summary</button>
+                <div id="ai-res" class="ai-res"></div>
+                <button class="start-btn" style="margin-top:auto;" onclick="go(3)">Seal Chapter</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="stage" id="s3">
+        <h1 style="font-family:'Instrument Serif'; font-size:4rem;">Chapter Closed.</h1>
+        <button class="start-btn" style="margin-top:20px;" onclick="location.reload()">Start New Archive</button>
+    </div>
+</div>
+
+<script>
+let tone = 'neutral';
+
+function go(n){
+    document.querySelectorAll('.stage').forEach(s=>s.classList.remove('on'));
+    document.getElementById('s'+n).classList.add('on');
+    document.getElementById('prog').style.width = (n*33)+'%';
+}
+
+function goWrite(){
+    const s = document.getElementById('song-inp').value;
+    document.getElementById('sc-name').textContent = "♪ " + (s || "Quiet Silence");
+    go(2);
+}
+
+function setTone(el){
+    document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));
+    el.classList.add('on');
+    tone = el.dataset.tone;
+}
+
+// --- THE REWRITE ENGINE ---
 function getAestheticRewrite(input) {
-    // 1. We extract the most frequent "meaningful" words to find your actual subject
     const words = input.toLowerCase().match(/\b(\w{4,})\b/g) || [];
     const counts = {};
     words.forEach(w => { if(!['this','that','with','from','they'].includes(w)) counts[w] = (counts[w] || 0) + 1; });
-    
-    // 2. Identify the 'Core' of your story (e.g., "Dad", "Toronto", "Internship")
     const sortedWords = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+    
+    // This finds what YOU wrote about
     const coreSubject = sortedWords[0] || "this moment";
     const secondaryDetail = sortedWords[1] || "the atmosphere";
 
-    // 3. Create a summary that reflects YOUR words back to you
     const templates = [
-        `There’s a specific kind of weight to how you describe ${coreSubject}. It’s woven into the ${secondaryDetail}, creating a loop that feels both heavy and remarkably vivid. It’s a chapter that’s been playing on repeat, waiting for its final line.`,
-        `The way ${coreSubject} anchors this entire memory feels deeply cinematic. You’ve captured a fragment of time where ${secondaryDetail} defines the mood, turning a personal thought into a piece of archived lore.`
+        `There’s a specific kind of weight to how you describe ${coreSubject}. It’s woven into the ${secondaryDetail}, creating a loop that feels remarkably vivid. It’s a chapter playing on repeat.`,
+        `The way ${coreSubject} anchors this memory feels deeply cinematic. You’ve captured a fragment of time where ${secondaryDetail} defines the mood, turning a thought into archived lore.`
     ];
-
     return templates[Math.floor(Math.random() * templates.length)];
 }
 
-async function genEndings(){
+function genEndings(){
     const input = document.getElementById('warea').value;
-    if(input.length < 5) return alert("Write a little more so I can feel the vibe.");
+    if(input.length < 5) return alert("Write a bit more first.");
     
     const res = document.getElementById('ai-res');
-    res.style.display = 'block';
-    res.innerHTML = '<div class="ai-load">Reading between the lines...</div>';
+    res.innerHTML = '<div style="color:var(--dim); font-size:.8rem; font-style:italic;">Reading the lore...</div>';
 
     setTimeout(() => {
         const rewrite = getAestheticRewrite(input);
-        
-        // Endings now adapt to the "Subject" found in your text
-        const core = input.match(/\b(dad|father|grandpa|brother|he|him)\b/i)?.[0] || "it";
+        const core = input.match(/\b(dad|father|grandpa|brother|he|him|rogers|intern|prince)\b/i)?.[0] || "it";
         
         const endings = {
-            sob: [`It ends with the realization that some things are never fully unsaid. They just settle. 😭`, `The silence follows ${core} out of the room, leaving the loop finally, quietly, closed.`],
-            giggle: [`Then a random bird hits the window and the profound sadness is immediately canceled. 😂`, `You realize you're overthinking ${core} and decide to just go get a snack instead.`],
-            neutral: [`It exists. It happened. And now, it is finished. 🌫`, `No big resolution. Just the choice to stop replaying the tape.`],
-            blunt: [`The truth is, this loop doesn't have an answer. It only has an exit. 🔪`, `${core.charAt(0).toUpperCase() + core.slice(1)} is part of the past. You are in the present.`]
+            sob: [`It ends with the realization that some things are never fully unsaid. They just settle. 😭`, `The silence follows ${core} out of the room, leaving the loop finally closed.`],
+            giggle: [`Then you realize you're overthinking ${core} and decide to just go get a snack instead. 😂`, `The dramatic tension breaks because ${core} did something actually quite mid.`],
+            neutral: [`It happened. And now, it is finished. 🌫`, `No big resolution. Just the choice to stop replaying the tape.`]
         };
+
         const choices = endings[tone] || endings.neutral;
-        
-        res.innerHTML = `<div style="font-family:'Instrument Serif'; font-style:italic; color:var(--blue2); margin-bottom:1rem; font-size:1.1rem;">"${rewrite}"</div>` +
-            `<div style="font-family:'DM Mono'; font-size:0.5rem; color:var(--dim); text-transform:uppercase; margin-bottom:10px;">Suggested Endings</div>` +
-            choices.map(e => `<button class="ai-item" onclick="this.classList.add('on'); ending='${e.replace(/'/g, "\\'")}';">${e}</button>`).join('');
-    }, 1200);
+        res.innerHTML = `
+            <div style="font-family:'Instrument Serif'; font-style:italic; color:var(--blue2); margin-bottom:1.5rem; font-size:1.1rem;">"${rewrite}"</div>
+            <div style="font-family:'DM Mono'; font-size:0.5rem; color:var(--dim); text-transform:uppercase; margin-bottom:10px;">Select an ending to seal</div>
+            ${choices.map(e => `<button class="ai-item" onclick="this.style.color='white'; this.style.borderColor='white'">${e}</button>`).join('')}
+        `;
+    }, 1000);
 }
+
+// CURSOR
+let cx=0,cy=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{cx=e.clientX;cy=e.clientY;document.getElementById('cur-dot').style.left=cx+'px';document.getElementById('cur-dot').style.top=cy+'px';});
+(function anim(){rx+=(cx-rx)*.15;ry+=(cy-ry)*.15;document.getElementById('cur-ring').style.left=rx+'px';document.getElementById('cur-ring').style.top=ry+'px';requestAnimationFrame(anim);})();
+</script>
+
+</body>
+</html>
