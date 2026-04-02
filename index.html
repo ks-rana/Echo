@@ -1,69 +1,86 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Archive | Digital Peace</title>
-    <style>
-        :root {
-            --soft-pink: #fce4ec;
-            --deep-rose: #880e4f;
-            --glass: rgba(255, 255, 255, 0.1);
-            --accent: #ff85a1;
-        }
+// STATE
+let song='', ending='', tone='', aiPick='';
+let archive = [];
+try { archive = JSON.parse(localStorage.getItem('echo_v2') || '[]'); } catch(e) {}
 
-        body {
-            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 100%);
-            color: #fff;
-            font-family: 'Helvetica Neue', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0;
-            overflow-x: hidden;
-        }
+// --- NEW: THE "WATTPAD" REWRITE ENGINE ---
+function getAestheticRewrite(input, selectedTone) {
+    const subjects = input.match(/(prince|king|boss|intern|ceo|boy|him|her|them|lead)/gi) || ["the main character"];
+    const places = input.match(/(cafe|ball|palace|office|party|street|room|castle|rogers)/gi) || ["the scene"];
+    const items = input.match(/(coffee|dress|sword|phone|crown|matcha|latte|screen)/gi) || ["the moment"];
+    const actions = input.match(/(chasing|running|staring|fighting|crying|laughing|waiting)/gi) || ["existing"];
 
-        /* The Glass Card */
-        .glass-card {
-            width: 90%;
-            max-width: 450px;
-            background: var(--glass);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 32px;
-            padding: 40px;
-            text-align: center;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
-            animation: slideUp 0.8s ease-out;
-        }
+    const s = subjects[0]; const l = places[0]; const o = items[0]; const a = actions[0];
 
-        h1 {
-            font-weight: 300;
-            letter-spacing: 4px;
-            text-transform: uppercase;
-            font-size: 1.2rem;
-            margin-bottom: 10px;
-            color: var(--accent);
-        }
+    const stories = [
+        `The air in the ${l} was thick with the kind of tension you only find in the deepest Pinterest threads. You were ${a} like your life was a cinematic masterpiece, but the ${s} was right there, their gaze heavier than the ${o} in your hand. It’s giving main character. It’s giving peak lore.`,
+        `The lighting in the ${l} hit perfectly as you realized the ${o} was the only thing keeping you grounded. Behind you, the ${s} was ${a}—a total slow-burn move. This isn't just a thought; it's a mood board come to life.`
+    ];
 
-        .subtitle {
-            font-size: 0.8rem;
-            color: #aaa;
-            margin-bottom: 30px;
-            letter-spacing: 1px;
-        }
+    return stories[Math.floor(Math.random() * stories.length)];
+}
 
-        /* Stylish Input */
-        textarea {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 20px;
-            padding: 20px;
-            color: #eee;
-            font-family: inherit;
-            font-size: 0.95rem;
-            resize: none;
-            outline
+// --- UPDATED GENERATE FUNCTION ---
+async function genEndings() {
+    const sc = document.getElementById('warea').value.trim();
+    if (sc.length < 8) {
+        const b = document.getElementById('ai-btn');
+        b.textContent = '✦ write a little more first';
+        setTimeout(() => { b.textContent = '✦ generate ending with AI'; }, 2200); return;
+    }
+
+    const btn = document.getElementById('ai-btn');
+    btn.classList.add('loading'); btn.textContent = '✦ refining the lore…';
+    
+    const res = document.getElementById('ai-res');
+    res.style.display = 'block';
+    res.innerHTML = '<div class="ai-load">applying the pinterest filter...</div>';
+
+    // Simulate the "AI" processing for the aesthetic feel
+    setTimeout(() => {
+        const rewrite = getAestheticRewrite(sc, tone);
+        const endings = {
+            sob: ["It ends with a single tear hitting the pavement. Tragic. Beautiful. 😭", "The bridge of a sad song plays as you walk away. End of era."],
+            giggle: ["And then you realize his shoes were actually mid. Loop broken. 😂", "You trip over a rug and the 'prince' laughs. The magic is gone."],
+            neutral: ["It just... stops. Like a screen fading to black. It's okay. 🌫", "You put the latte down and leave. The end."],
+            blunt: ["He never actually cared. You were just bored. Now you know. 🔪", "This scenario was a filler episode. Deleting the footage."]
+        };
+
+        const choices = endings[tone] || endings.neutral;
+        res.innerHTML = `<div class="ai-rlbl">The Aesthetic Rewrite:</div>
+                         <div style="font-family:'Instrument Serif'; font-style:italic; margin-bottom:15px; color:#aaa;">"${rewrite}"</div>
+                         <div class="ai-rlbl">Suggested Endings:</div>` +
+            choices.map(e => `<button class="ai-item" onclick="pickAI(this,${JSON.stringify(e)})">${e}</button>`).join('');
+        
+        btn.classList.remove('loading'); btn.textContent = '✦ generate ending with AI';
+    }, 1200);
+}
+
+// --- ALL OTHER ORIGINAL LOGIC (KEEP THESE) ---
+let cx=0,cy=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{cx=e.clientX;cy=e.clientY;document.getElementById('cur-dot').style.left=cx+'px';document.getElementById('cur-dot').style.top=cy+'px';});
+(function anim(){rx+=(cx-rx)*.13;ry+=(cy-ry)*.13;const r=document.getElementById('cur-ring');r.style.left=rx+'px';r.style.top=ry+'px';requestAnimationFrame(anim);})();
+const bgC=document.getElementById('bg');const bgX=bgC.getContext('2d');let bgT=0,mx2=.5,my2=.5;
+document.addEventListener('mousemove',e=>{mx2=e.clientX/innerWidth;my2=e.clientY/innerHeight;});
+function rzBg(){bgC.width=innerWidth;bgC.height=innerHeight;}
+rzBg();window.addEventListener('resize',rzBg);
+const orbs=[{x:.18,y:.28,r:.34,c:'rgba(107,140,255,.058)',vx:.00028,vy:.00018},{x:.78,y:.68,r:.28,c:'rgba(91,184,168,.038)',vx:-.00018,vy:.00022},{x:.5,y:.88,r:.38,c:'rgba(107,140,255,.038)',vx:.00016,vy:-.00018}];
+(function drawBg(){bgX.clearRect(0,0,bgC.width,bgC.height);bgT+=.0038;orbs.forEach((o,i)=>{o.x+=o.vx*Math.sin(bgT*(i+1));o.y+=o.vy*Math.cos(bgT*(i+1));if(o.x<0||o.x>1)o.vx*=-1;if(o.y<0||o.y>1)o.vy*=-1;const px=o.x*bgC.width+(mx2-.5)*18*(i%2?1:-1);const py=o.y*bgC.height+(my2-.5)*11*(i%2?1:-1);const r=o.r*Math.min(bgC.width,bgC.height);const g=bgX.createRadialGradient(px,py,0,px,py,r);g.addColorStop(0,o.c);g.addColorStop(1,'transparent');bgX.beginPath();bgX.arc(px,py,r,0,Math.PI*2);bgX.fillStyle=g;bgX.fill();});requestAnimationFrame(drawBg);})();
+const PROG={0:0,1:28,2:62,3:100};
+function go(n){document.querySelectorAll('.stage').forEach(s=>s.classList.remove('on'));document.getElementById('s'+n).classList.add('on');document.getElementById('prog').style.width=(PROG[n]||0)+'%';}
+function goWrite(){const v=document.getElementById('song-inp').value.trim();if(!v){document.getElementById('song-inp').focus();return;}song=v;document.getElementById('sc-name').textContent=v;go(2);startTimer();setTimeout(()=>document.getElementById('warea').focus(),400);}
+document.getElementById('warea').addEventListener('input',()=>{const w=document.getElementById('warea').value.trim().split(/\s+/).filter(Boolean).length;document.getElementById('wc').textContent=w+(w===1?' word':' words');});
+let tSecs=0,tInt=null,tStarted=false;
+function startTimer(){if(tStarted)return;tStarted=true;tSecs=0;tInt=setInterval(()=>{tSecs++;const rem=600-tSecs;const el=document.getElementById('t-line');if(rem<=0){el.textContent="gentle nudge: maybe time to seal this?";el.classList.add('warn');clearInterval(tInt);} else if(rem<=120){const m=Math.floor(rem/60),s=rem%60;el.textContent=m+':'+(s<10?'0':'')+s+' left';el.classList.add('warn');}},1000);}
+function setTone(el){document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));el.classList.add('on');tone=el.dataset.tone;}
+function pickStatic(el,val){document.querySelectorAll('.sopt,.ai-item').forEach(b=>b.classList.remove('on'));el.classList.add('on');aiPick='';if(val==='custom'){document.getElementById('own-area').classList.add('show');setTimeout(()=>document.getElementById('own-area').focus(),80);ending='custom';} else {document.getElementById('own-area').classList.remove('show');ending=val;}}
+function pickAI(el,text){document.querySelectorAll('.ai-item,.sopt').forEach(b=>b.classList.remove('on'));el.classList.add('on');aiPick=text;ending=text;document.getElementById('own-area').classList.remove('show');}
+function sealIt(){if(aiPick)ending=aiPick;else if(ending==='custom'){const v=document.getElementById('own-area').value.trim();ending=v||'it ends here.';}if(!ending){const opts=document.querySelector('.static-opts');opts.style.opacity='.4';setTimeout(()=>opts.style.opacity='1',500);return;}const sc=document.getElementById('warea').value.trim();const entry={id:Date.now(),song,scenario:sc||'(unwritten)',ending,tone:tone||'',date:new Date().toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'})};archive.unshift(entry);try{localStorage.setItem('echo_v2',JSON.stringify(archive.slice(0,60)));}catch(e){}document.getElementById('sq').textContent=ending;go(3);clearInterval(tInt);}
+function openArchive(){const list=document.getElementById('aov-list');let html='';if(!archive.length){html+='<div class="ae">nothing sealed yet.</div>';}else{html+=archive.map(e=>`<div class="ent"><div class="es">♪ ${esc(e.song)}</div><div class="esc">${esc(e.scenario)}</div><div class="ee">ending: <em>${esc(e.ending)}</em></div></div>`).join('');}list.innerHTML=html;document.getElementById('aov').classList.add('open');}
+function closeArchive(){document.getElementById('aov').classList.remove('open');}
+function openBreath(){document.getElementById('bov').classList.add('open');}
+function closeBreath(){document.getElementById('bov').classList.remove('open');}
+function reset(){location.reload();}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeBreath();closeArchive();}if(e.key==='Enter'&&document.getElementById('s1').classList.contains('on')&&!e.shiftKey){e.preventDefault();goWrite();}});
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
