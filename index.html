@@ -1,86 +1,175 @@
-// STATE
-let song='', ending='', tone='', aiPick='';
-let archive = [];
-try { archive = JSON.parse(localStorage.getItem('echo_v2') || '[]'); } catch(e) {}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECHO — close the loop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:ital,wght@0,300;0,400;1,300&family=Figtree:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#07080c;--deep:#0c0e16;--surf:#121520;--lift:#1a1e2e;
+  --bdr:rgba(255,255,255,.06);--bdr2:rgba(255,255,255,.11);
+  --text:#e6e4f0;--muted:#6a6880;--dim:#38364a;
+  --blue:#6b8cff;--blue2:#9eb3ff;--teal:#5bb8a8;--rose:#e8809a;--gold:#d4a96a;--green:#6bc98a;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;background:var(--void);}
+body{font-family:'Figtree', 'Helvetica', sans-serif;font-weight:300;color:var(--text);cursor:none;}
+#cur-ring{position:fixed;z-index:9999;pointer-events:none;width:22px;height:22px;border-radius:50%;border:1px solid rgba(107,140,255,.45);transform:translate(-50%,-50%);transition:width .18s,height .18s,border-color .18s;}
+#cur-dot{position:fixed;z-index:9999;pointer-events:none;width:3px;height:3px;border-radius:50%;background:rgba(107,140,255,.85);transform:translate(-50%,-50%);}
+#bg{position:fixed;inset:0;z-index:0;pointer-events:none;}
+#app{position:relative;z-index:10;height:100vh;width:100vw;overflow:hidden;}
+#prog{position:fixed;bottom:0;left:0;z-index:50;height:1px;background:rgba(107,140,255,.35);transition:width .7s ease;pointer-events:none;}
+.stage{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .7s ease;}
+.stage.on{opacity:1;pointer-events:all;}
 
-// --- NEW: THE "WATTPAD" REWRITE ENGINE ---
-function getAestheticRewrite(input, selectedTone) {
-    const subjects = input.match(/(prince|king|boss|intern|ceo|boy|him|her|them|lead)/gi) || ["the main character"];
+/* LANDING */
+#s0{gap:0;text-align:center;}
+.echo-logo{font-family:'Instrument Serif', serif;font-size:clamp(5rem,14vw,10rem);font-weight:400;letter-spacing:-.04em;line-height:.88;color:var(--text);margin-bottom:1rem;}
+.echo-logo em{font-style:italic;color:var(--blue2);}
+.echo-tag{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.28em;text-transform:uppercase;color:var(--muted);margin-bottom:3rem;}
+.start-btn{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;padding:.85rem 2.4rem;background:transparent;border:1px solid rgba(107,140,255,.28);color:rgba(107,140,255,.75);cursor:pointer;transition:all .22s;}
+.start-btn:hover{background:rgba(107,140,255,.07);border-color:rgba(107,140,255,.55);color:var(--blue2);}
+.land-foot{position:absolute;bottom:2.2rem;font-family:'DM Mono',monospace;font-size:.46rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);text-align:center;line-height:2;}
+
+/* WRITE STAGE LAYOUT */
+#s2{align-items:stretch;justify-content:flex-start;padding:0;}
+.wlayout{display:grid;grid-template-columns:1fr 1fr;height:100vh;width:100%;}
+.wleft{padding:clamp(2rem,5vw,3.5rem);border-right:1px solid var(--bdr);display:flex;flex-direction:column;background:rgba(107,140,255,.015);overflow:hidden;}
+.song-chip{display:flex;align-items:center;gap:.8rem;padding:.65rem 1rem;background:rgba(107,140,255,.07);border:1px solid rgba(107,140,255,.14);margin-bottom:1.8rem;flex-shrink:0;}
+.sc-name{font-family:'DM Mono',monospace;font-size:.55rem;letter-spacing:.1em;color:var(--blue2);}
+.warea{flex:1;background:transparent;border:none;resize:none;color:var(--text);font-family:'Instrument Serif',serif;font-size:clamp(.95rem,1.8vw,1.2rem);line-height:1.9;outline:none;caret-color:var(--blue);padding:0;overflow-y:auto;scrollbar-width:none;}
+.wright{padding:clamp(2rem,5vw,3.5rem);display:flex;flex-direction:column;overflow-y:auto;scrollbar-width:none;}
+.tbtn{padding:.45rem .9rem;background:transparent;border:1px solid var(--bdr);color:var(--dim);font-family:'DM Mono',monospace;font-size:.44rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .18s;margin-bottom:5px;}
+.tbtn.on{border-color:var(--tc,var(--blue));color:var(--tc,var(--blue2));background:rgba(107,140,255,.06);}
+.ai-res{margin-top:1.5rem; animation:fadeUp 0.4s ease;}
+.ai-item{padding:.75rem 1rem;margin-bottom:.35rem;border:1px solid var(--bdr);color:var(--muted);cursor:pointer;font-family:'Instrument Serif',serif;font-style:italic;font-size:.85rem;line-height:1.5;background:transparent;text-align:left;width:100%;}
+.ai-item:hover{border-color:var(--blue);color:var(--text);}
+.ai-load { font-style: italic; color: var(--dim); font-size: 0.8rem; }
+.seal-btn{padding:.88rem 2rem;background:rgba(107,140,255,.09);border:1px solid rgba(107,140,255,.28);color:var(--blue2);font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;margin-top:auto;align-self:flex-start;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div id="cur-ring"></div>
+<div id="cur-dot"></div>
+<canvas id="bg"></canvas>
+<div id="prog"></div>
+
+<div id="app">
+    <div class="stage on" id="s0">
+        <div class="echo-logo">EC<em>H</em>O</div>
+        <div class="echo-tag">a song started · now you're somewhere else</div>
+        <button class="start-btn" onclick="go(1)">begin</button>
+    </div>
+
+    <div class="stage" id="s1" style="padding:0 2rem;">
+        <div style="width:min(540px,95vw);">
+            <h2 style="font-family:'Instrument Serif'; font-size:2.5rem; margin-bottom:1rem;">What song started it?</h2>
+            <input class="e-inp" id="song-inp" style="width:100%; background:transparent; border:none; border-bottom:1px solid var(--bdr2); color:white; font-size:1.5rem; padding:10px 0; outline:none;" placeholder="song, artist, lyric...">
+            <button class="start-btn" style="margin-top:20px;" onclick="goWrite()">continue →</button>
+        </div>
+    </div>
+
+    <div class="stage" id="s2">
+        <div class="wlayout">
+            <div class="wleft">
+                <div class="song-chip"><div class="sc-name" id="sc-name">—</div></div>
+                <textarea class="warea" id="warea" placeholder="Write the random rambling here..."></textarea>
+            </div>
+            <div class="wright">
+                <div style="font-family:'Instrument Serif'; font-size:1.5rem; margin-bottom:1rem;">Archive the loop.</div>
+                <div class="tone-row" style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+                    <button class="tbtn" data-tone="sob" onclick="setTone(this)">😭 sob</button>
+                    <button class="tbtn" data-tone="giggle" onclick="setTone(this)">😂 giggle</button>
+                    <button class="tbtn" data-tone="neutral" onclick="setTone(this)">🌫 neutral</button>
+                    <button class="tbtn" data-tone="blunt" onclick="setTone(this)">🔪 blunt</button>
+                </div>
+                <button class="start-btn" id="ai-btn" onclick="genEndings()">✦ Generate Aesthetic Ending</button>
+                <div class="ai-res" id="ai-res" style="display:none;"></div>
+                <button class="seal-btn" onclick="go(3)">seal and release</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="stage" id="s3" style="text-align:center;">
+        <h2 style="font-family:'Instrument Serif'; font-size:3rem; margin-bottom:1rem;">Sealed.</h2>
+        <p style="color:var(--muted); margin-bottom:30px;">That chapter is archived. Go back to being the main character.</p>
+        <button class="start-btn" onclick="location.reload()">start fresh</button>
+    </div>
+</div>
+
+<script>
+let song='', tone='', ending='';
+
+// --- NAVIGATION ---
+function go(n){
+    document.querySelectorAll('.stage').forEach(s=>s.classList.remove('on'));
+    document.getElementById('s'+n).classList.add('on');
+    document.getElementById('prog').style.width = (n * 33) + '%';
+}
+
+function goWrite(){
+    song = document.getElementById('song-inp').value;
+    document.getElementById('sc-name').textContent = song || "Unknown Song";
+    go(2);
+}
+
+function setTone(el){
+    document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));
+    el.classList.add('on');
+    tone = el.dataset.tone;
+}
+
+// --- THE REWRITE ENGINE ---
+function getAestheticRewrite(input) {
+    const subjects = input.match(/(prince|king|boss|intern|ceo|boy|him|her|them|lead)/gi) || ["the main lead"];
     const places = input.match(/(cafe|ball|palace|office|party|street|room|castle|rogers)/gi) || ["the scene"];
-    const items = input.match(/(coffee|dress|sword|phone|crown|matcha|latte|screen)/gi) || ["the moment"];
-    const actions = input.match(/(chasing|running|staring|fighting|crying|laughing|waiting)/gi) || ["existing"];
+    const items = input.match(/(coffee|dress|sword|phone|crown|matcha|latte|screen)/gi) || ["the plot point"];
+    const actions = input.match(/(chasing|running|staring|fighting|crying|laughing|waiting)/gi) || ["acting up"];
 
     const s = subjects[0]; const l = places[0]; const o = items[0]; const a = actions[0];
 
-    const stories = [
-        `The air in the ${l} was thick with the kind of tension you only find in the deepest Pinterest threads. You were ${a} like your life was a cinematic masterpiece, but the ${s} was right there, their gaze heavier than the ${o} in your hand. It’s giving main character. It’s giving peak lore.`,
-        `The lighting in the ${l} hit perfectly as you realized the ${o} was the only thing keeping you grounded. Behind you, the ${s} was ${a}—a total slow-burn move. This isn't just a thought; it's a mood board come to life.`
-    ];
-
-    return stories[Math.floor(Math.random() * stories.length)];
+    return `The air in the ${l} was thick with the kind of tension you only find in the deepest Pinterest threads. You were ${a} like your life depended on it, while the ${s} watched you hold that ${o}. It’s giving peak main character lore.`;
 }
 
-// --- UPDATED GENERATE FUNCTION ---
-async function genEndings() {
-    const sc = document.getElementById('warea').value.trim();
-    if (sc.length < 8) {
-        const b = document.getElementById('ai-btn');
-        b.textContent = '✦ write a little more first';
-        setTimeout(() => { b.textContent = '✦ generate ending with AI'; }, 2200); return;
-    }
-
-    const btn = document.getElementById('ai-btn');
-    btn.classList.add('loading'); btn.textContent = '✦ refining the lore…';
+async function genEndings(){
+    const input = document.getElementById('warea').value;
+    if(!input) return alert("Write something first, bestie.");
     
     const res = document.getElementById('ai-res');
     res.style.display = 'block';
-    res.innerHTML = '<div class="ai-load">applying the pinterest filter...</div>';
+    res.innerHTML = '<div class="ai-load">Refining the lore...</div>';
 
-    // Simulate the "AI" processing for the aesthetic feel
     setTimeout(() => {
-        const rewrite = getAestheticRewrite(sc, tone);
+        const rewrite = getAestheticRewrite(input);
         const endings = {
-            sob: ["It ends with a single tear hitting the pavement. Tragic. Beautiful. 😭", "The bridge of a sad song plays as you walk away. End of era."],
-            giggle: ["And then you realize his shoes were actually mid. Loop broken. 😂", "You trip over a rug and the 'prince' laughs. The magic is gone."],
-            neutral: ["It just... stops. Like a screen fading to black. It's okay. 🌫", "You put the latte down and leave. The end."],
-            blunt: ["He never actually cared. You were just bored. Now you know. 🔪", "This scenario was a filler episode. Deleting the footage."]
+            sob: ["It ends with a single tear hitting the pavement. Tragic. 😭", "The bridge of a sad song plays as you walk away."],
+            giggle: ["Then you realize his outfit was actually mid. Loop broken. 😂", "You trip over a rug and the 'prince' laughs. The magic is gone."],
+            neutral: ["It just... stops. Like a screen fading to black. 🌫", "You put the latte down and leave. The end."],
+            blunt: ["He never actually cared. You were just bored. 🔪", "This scenario was a filler episode. Deleting footage."]
         };
-
         const choices = endings[tone] || endings.neutral;
-        res.innerHTML = `<div class="ai-rlbl">The Aesthetic Rewrite:</div>
-                         <div style="font-family:'Instrument Serif'; font-style:italic; margin-bottom:15px; color:#aaa;">"${rewrite}"</div>
-                         <div class="ai-rlbl">Suggested Endings:</div>` +
-            choices.map(e => `<button class="ai-item" onclick="pickAI(this,${JSON.stringify(e)})">${e}</button>`).join('');
         
-        btn.classList.remove('loading'); btn.textContent = '✦ generate ending with AI';
-    }, 1200);
+        res.innerHTML = `<div style="font-family:'Instrument Serif'; font-style:italic; color:#aaa; margin-bottom:1rem;">"${rewrite}"</div>` +
+            choices.map(e => `<button class="ai-item" onclick="this.classList.add('on')">${e}</button>`).join('');
+    }, 1000);
 }
 
-// --- ALL OTHER ORIGINAL LOGIC (KEEP THESE) ---
+// --- CURSOR & BG ---
 let cx=0,cy=0,rx=0,ry=0;
 document.addEventListener('mousemove',e=>{cx=e.clientX;cy=e.clientY;document.getElementById('cur-dot').style.left=cx+'px';document.getElementById('cur-dot').style.top=cy+'px';});
-(function anim(){rx+=(cx-rx)*.13;ry+=(cy-ry)*.13;const r=document.getElementById('cur-ring');r.style.left=rx+'px';r.style.top=ry+'px';requestAnimationFrame(anim);})();
-const bgC=document.getElementById('bg');const bgX=bgC.getContext('2d');let bgT=0,mx2=.5,my2=.5;
-document.addEventListener('mousemove',e=>{mx2=e.clientX/innerWidth;my2=e.clientY/innerHeight;});
+(function anim(){rx+=(cx-rx)*.13;ry+=(cy-ry)*.13;document.getElementById('cur-ring').style.left=rx+'px';document.getElementById('cur-ring').style.top=ry+'px';requestAnimationFrame(anim);})();
+
+const bgC=document.getElementById('bg');const bgX=bgC.getContext('2d');
 function rzBg(){bgC.width=innerWidth;bgC.height=innerHeight;}
 rzBg();window.addEventListener('resize',rzBg);
-const orbs=[{x:.18,y:.28,r:.34,c:'rgba(107,140,255,.058)',vx:.00028,vy:.00018},{x:.78,y:.68,r:.28,c:'rgba(91,184,168,.038)',vx:-.00018,vy:.00022},{x:.5,y:.88,r:.38,c:'rgba(107,140,255,.038)',vx:.00016,vy:-.00018}];
-(function drawBg(){bgX.clearRect(0,0,bgC.width,bgC.height);bgT+=.0038;orbs.forEach((o,i)=>{o.x+=o.vx*Math.sin(bgT*(i+1));o.y+=o.vy*Math.cos(bgT*(i+1));if(o.x<0||o.x>1)o.vx*=-1;if(o.y<0||o.y>1)o.vy*=-1;const px=o.x*bgC.width+(mx2-.5)*18*(i%2?1:-1);const py=o.y*bgC.height+(my2-.5)*11*(i%2?1:-1);const r=o.r*Math.min(bgC.width,bgC.height);const g=bgX.createRadialGradient(px,py,0,px,py,r);g.addColorStop(0,o.c);g.addColorStop(1,'transparent');bgX.beginPath();bgX.arc(px,py,r,0,Math.PI*2);bgX.fillStyle=g;bgX.fill();});requestAnimationFrame(drawBg);})();
-const PROG={0:0,1:28,2:62,3:100};
-function go(n){document.querySelectorAll('.stage').forEach(s=>s.classList.remove('on'));document.getElementById('s'+n).classList.add('on');document.getElementById('prog').style.width=(PROG[n]||0)+'%';}
-function goWrite(){const v=document.getElementById('song-inp').value.trim();if(!v){document.getElementById('song-inp').focus();return;}song=v;document.getElementById('sc-name').textContent=v;go(2);startTimer();setTimeout(()=>document.getElementById('warea').focus(),400);}
-document.getElementById('warea').addEventListener('input',()=>{const w=document.getElementById('warea').value.trim().split(/\s+/).filter(Boolean).length;document.getElementById('wc').textContent=w+(w===1?' word':' words');});
-let tSecs=0,tInt=null,tStarted=false;
-function startTimer(){if(tStarted)return;tStarted=true;tSecs=0;tInt=setInterval(()=>{tSecs++;const rem=600-tSecs;const el=document.getElementById('t-line');if(rem<=0){el.textContent="gentle nudge: maybe time to seal this?";el.classList.add('warn');clearInterval(tInt);} else if(rem<=120){const m=Math.floor(rem/60),s=rem%60;el.textContent=m+':'+(s<10?'0':'')+s+' left';el.classList.add('warn');}},1000);}
-function setTone(el){document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));el.classList.add('on');tone=el.dataset.tone;}
-function pickStatic(el,val){document.querySelectorAll('.sopt,.ai-item').forEach(b=>b.classList.remove('on'));el.classList.add('on');aiPick='';if(val==='custom'){document.getElementById('own-area').classList.add('show');setTimeout(()=>document.getElementById('own-area').focus(),80);ending='custom';} else {document.getElementById('own-area').classList.remove('show');ending=val;}}
-function pickAI(el,text){document.querySelectorAll('.ai-item,.sopt').forEach(b=>b.classList.remove('on'));el.classList.add('on');aiPick=text;ending=text;document.getElementById('own-area').classList.remove('show');}
-function sealIt(){if(aiPick)ending=aiPick;else if(ending==='custom'){const v=document.getElementById('own-area').value.trim();ending=v||'it ends here.';}if(!ending){const opts=document.querySelector('.static-opts');opts.style.opacity='.4';setTimeout(()=>opts.style.opacity='1',500);return;}const sc=document.getElementById('warea').value.trim();const entry={id:Date.now(),song,scenario:sc||'(unwritten)',ending,tone:tone||'',date:new Date().toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'})};archive.unshift(entry);try{localStorage.setItem('echo_v2',JSON.stringify(archive.slice(0,60)));}catch(e){}document.getElementById('sq').textContent=ending;go(3);clearInterval(tInt);}
-function openArchive(){const list=document.getElementById('aov-list');let html='';if(!archive.length){html+='<div class="ae">nothing sealed yet.</div>';}else{html+=archive.map(e=>`<div class="ent"><div class="es">♪ ${esc(e.song)}</div><div class="esc">${esc(e.scenario)}</div><div class="ee">ending: <em>${esc(e.ending)}</em></div></div>`).join('');}list.innerHTML=html;document.getElementById('aov').classList.add('open');}
-function closeArchive(){document.getElementById('aov').classList.remove('open');}
-function openBreath(){document.getElementById('bov').classList.add('open');}
-function closeBreath(){document.getElementById('bov').classList.remove('open');}
-function reset(){location.reload();}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeBreath();closeArchive();}if(e.key==='Enter'&&document.getElementById('s1').classList.contains('on')&&!e.shiftKey){e.preventDefault();goWrite();}});
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+(function drawBg(){bgX.clearRect(0,0,bgC.width,bgC.height); requestAnimationFrame(drawBg);})();
 </script>
+
+<div id="cur-dot" style="position:fixed; width:4px; height:4px; background:var(--blue); border-radius:50%; pointer-events:none; z-index:9999;"></div>
+<div id="cur-ring" style="position:fixed; width:20px; height:20px; border:1px solid var(--blue); border-radius:50%; pointer-events:none; z-index:9999; transform:translate(-50%,-50%); transition:0.1s;"></div>
+</body>
+</html>
