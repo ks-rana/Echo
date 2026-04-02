@@ -189,6 +189,14 @@ body{font-family:'Figtree',sans-serif;font-weight:300;color:var(--text);cursor:n
 }
 .ending-opt:hover{border-color:var(--border2);color:var(--text);background:rgba(255,255,255,.02);}
 .ending-opt.selected{border-color:rgba(107,140,255,.4);color:var(--blue2);background:rgba(107,140,255,.06);}
+
+.mood-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
 .ending-area{
   width:100%;background:transparent;border:none;
   resize:none;color:var(--text);
@@ -213,6 +221,8 @@ body{font-family:'Figtree',sans-serif;font-weight:300;color:var(--text);cursor:n
   display:flex;align-items:center;gap:.6rem;
 }
 .seal-btn:hover{background:rgba(107,140,255,.18);border-color:rgba(107,140,255,.5);}
+.seal-btn:disabled{opacity:0.5;cursor:wait;}
+
 .s2-bottom{
   position:absolute;bottom:0;left:0;right:0;
   display:flex;align-items:center;justify-content:space-between;
@@ -334,6 +344,18 @@ body{font-family:'Figtree',sans-serif;font-weight:300;color:var(--text);cursor:n
   font-size:2rem;color:var(--blue);opacity:.3;
   font-family:'Instrument Serif',serif;
 }
+
+.grounding-box {
+  margin-top: 1rem;
+  padding: 0.8rem;
+  border-top: 1px dashed var(--border2);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--teal);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
 .return-btn{
   font-family:'DM Mono',monospace;font-size:.56rem;
   letter-spacing:.2em;text-transform:uppercase;
@@ -433,7 +455,6 @@ body{font-family:'Figtree',sans-serif;font-weight:300;color:var(--text);cursor:n
 
 <div id="app">
 
-  <!-- STAGE 0: LANDING -->
   <div class="stage active" id="s0">
     <div class="echo-title">EC<em>H</em>O</div>
     <div class="echo-sub">close the loop · release the thought</div>
@@ -444,7 +465,6 @@ body{font-family:'Figtree',sans-serif;font-weight:300;color:var(--text);cursor:n
     </div>
   </div>
 
-  <!-- STAGE 1: SONG -->
   <div class="stage" id="s1">
     <div class="s1-inner">
       <div class="stage-eyebrow">step one</div>
@@ -457,10 +477,8 @@ body{font-family:'Figtree',sans-serif;font-weight:300;color:var(--text);cursor:n
     </div>
   </div>
 
-  <!-- STAGE 2: WRITE + END -->
   <div class="stage" id="s2">
     <div class="s2-layout">
-      <!-- LEFT: write the scenario -->
       <div class="s2-left">
         <div class="song-display">
           <div class="song-note">♪</div>
@@ -474,18 +492,24 @@ body{font-family:'Figtree',sans-serif;font-weight:300;color:var(--text);cursor:n
           placeholder="write the scenario. all of it. the part that loops, the part that hurts, the part that has no ending. just get it out of your head and onto here…"></textarea>
         <div class="word-count" id="word-count">0 words</div>
       </div>
-      <!-- RIGHT: give it an ending -->
       <div class="s2-right">
         <div class="stage-eyebrow">give it an ending</div>
-        <div class="ending-prompt-title">Every story needs a last line.<br>Even an unfinished one.</div>
-        <p class="ending-prompt-sub">Pick one. Any one. It doesn't have to be the right one — just one that closes the loop enough to let you leave.</p>
+        <div class="ending-prompt-title">Every story needs a last line.</div>
+        <p class="ending-prompt-sub">Select a narrative tone to let the echo find an ending, or write your own.</p>
+        
+        <div class="mood-grid">
+          <button class="ending-opt" onclick="generateMoodEnding('hopeful')">✨ Hopeful</button>
+          <button class="ending-opt" onclick="generateMoodEnding('melancholic')">🌧️ Melancholic</button>
+          <button class="ending-opt" onclick="generateMoodEnding('absurd')">🌀 Absurd</button>
+          <button class="ending-opt" onclick="generateMoodEnding('sharp')">🔪 Sharp</button>
+        </div>
+
         <div class="ending-options" id="ending-opts">
-          <button class="ending-opt" data-val="it resolves" onclick="selectEnding(this,'it resolves')">It resolves. Somehow. I don't need to know how.</button>
-          <button class="ending-opt" data-val="it stays unfinished" onclick="selectEnding(this,'it stays unfinished')">It stays unfinished. That's allowed.</button>
-          <button class="ending-opt" data-val="it didn't happen" onclick="selectEnding(this,'it didn\'t happen')">It didn't happen. It was never real.</button>
           <button class="ending-opt" data-val="custom" onclick="selectEnding(this,'custom')">Write my own ending →</button>
         </div>
-        <textarea class="ending-area" id="ending-input" placeholder="write how this ends…"></textarea>
+        
+        <textarea class="ending-area" id="ending-input" placeholder="Waiting for the echo..."></textarea>
+        
         <button class="seal-btn" id="seal-btn" onclick="sealIt()">
           <span>⬡</span> seal and release
         </button>
@@ -500,7 +524,6 @@ body{font-family:'Figtree',sans-serif;font-weight:300;color:var(--text);cursor:n
     </div>
   </div>
 
-  <!-- STAGE 3: SEALED -->
   <div class="stage" id="s3">
     <div class="seal-visual">
       <div class="seal-ring"></div>
@@ -518,10 +541,7 @@ body{font-family:'Figtree',sans-serif;font-weight:300;color:var(--text);cursor:n
     <div class="archive-count" id="archive-count"></div>
   </div>
 
-</div><!-- #app -->
-
-<!-- BREATHING OVERLAY -->
-<div id="breath-overlay">
+</div><div id="breath-overlay">
   <div class="breath-circle">
     <div></div>
   </div>
@@ -534,7 +554,6 @@ body{font-family:'Figtree',sans-serif;font-weight:300;color:var(--text);cursor:n
   <button class="close-breath" onclick="closeBreath()">I'm okay now</button>
 </div>
 
-<!-- ARCHIVE OVERLAY -->
 <div id="archive-overlay">
   <div class="archive-header">
     <div class="archive-title">sealed thoughts</div>
@@ -550,6 +569,57 @@ let selectedEndingVal = '';
 let archive = [];
 
 try { archive = JSON.parse(localStorage.getItem('echo_archive') || '[]'); } catch(e){}
+
+// ── MOOD ENDINGS ENGINE ──
+const endingTemplates = {
+  hopeful: [
+    "The credits roll as the sun finally breaks through. It wasn't easy, but the weight is gone.",
+    "The music fades into a quiet, steady hum of possibility. You are exactly where you need to be.",
+    "Everything that felt broken is simply waiting to be rearranged into something new."
+  ],
+  melancholic: [
+    "It remains a beautiful, unfinished ache. Some things are meant to stay in the rain.",
+    "The song ends on a minor chord. It hurts, but it's a quiet, honest kind of hurt.",
+    "We leave it here, perfectly frozen in the moment it started to slip away."
+  ],
+  absurd: [
+    "Suddenly, gravity fails and the whole scenario floats away into a neon sky. It doesn't matter anymore.",
+    "A giant clock appears and simply stops ticking. The loop is broken by a glitch in the dream.",
+    "The characters turn into static. The screen goes blank. There is only silence now."
+  ],
+  sharp: [
+    "The daydream shatters like glass. The room you are in is real. This thought is not.",
+    "End of file. No further data required. You are back in your body now.",
+    "The loop is cut. The logic fails. Real life is waiting for your attention."
+  ]
+};
+
+const groundingPrompts = [
+    "Name 3 things in the room that are blue.",
+    "What is a texture you can feel against your skin right now?",
+    "Take a sip of water. Describe the temperature.",
+    "Listen. What is the furthest sound you can hear?"
+];
+
+function generateMoodEnding(tone) {
+  const scenario = document.getElementById('scenario-input').value;
+  if(!scenario) { 
+    document.getElementById('scenario-input').focus();
+    return; 
+  }
+  
+  const area = document.getElementById('ending-input');
+  area.classList.add('show');
+  area.value = "Consulting the echo...";
+  
+  setTimeout(() => {
+    const picked = endingTemplates[tone][Math.floor(Math.random() * 3)];
+    area.value = picked;
+    selectedEndingVal = picked;
+    
+    document.querySelectorAll('.ending-opt').forEach(btn => btn.classList.remove('selected'));
+  }, 700);
+}
 
 // ── CURSOR ──
 let cx = 0, cy = 0, rx = 0, ry = 0;
@@ -656,8 +726,8 @@ function selectEnding(el, val) {
 
 // ── SEAL ──
 function sealIt() {
-  if(!selectedEndingVal) {
-    // pulse the ending options
+  const ending = document.getElementById('ending-input').value.trim();
+  if(!ending && !selectedEndingVal) {
     const opts = document.getElementById('ending-opts');
     opts.style.opacity='.5';
     setTimeout(()=>opts.style.opacity='1',400);
@@ -665,37 +735,35 @@ function sealIt() {
   }
 
   const scenario = document.getElementById('scenario-input').value.trim();
-  const customEnding = document.getElementById('ending-input').value.trim();
-  const ending = selectedEndingVal === 'custom'
-    ? (customEnding || 'it ends here.')
-    : selectedEndingVal;
+  const sealBtn = document.getElementById('seal-btn');
+  sealBtn.disabled = true;
+  sealBtn.innerText = "Sealing...";
 
-  // Save to archive
-  const entry = {
-    id: Date.now(),
-    song: currentSong,
-    scenario: scenario || '(unwritten)',
-    ending: ending,
-    date: new Date().toLocaleDateString('en', {month:'short',day:'numeric',year:'numeric'}),
-  };
-  archive.unshift(entry);
-  try { localStorage.setItem('echo_archive', JSON.stringify(archive.slice(0,50))); } catch(e){}
+  setTimeout(() => {
+    const finalEnding = ending || selectedEndingVal;
+    const entry = {
+      id: Date.now(),
+      song: currentSong,
+      scenario: scenario || '(unwritten)',
+      ending: finalEnding,
+      date: new Date().toLocaleDateString('en', {month:'short',day:'numeric',year:'numeric'}),
+    };
+    archive.unshift(entry);
+    try { localStorage.setItem('echo_archive', JSON.stringify(archive.slice(0,50))); } catch(e){}
 
-  // Show sealed screen
-  document.getElementById('sealed-ending-display').textContent = ending;
-  document.getElementById('archive-count').textContent =
-    archive.length + (archive.length===1?' thought sealed':' thoughts sealed');
+    const randomGrounding = groundingPrompts[Math.floor(Math.random() * groundingPrompts.length)];
+    document.getElementById('sealed-ending-display').innerHTML = `
+      <span>${esc(finalEnding)}</span>
+      <div class="grounding-box">Grounding Task: ${randomGrounding}</div>
+    `;
+    
+    document.getElementById('archive-count').textContent =
+      archive.length + (archive.length===1?' thought sealed':' thoughts sealed');
 
-  // Personalise the sub text based on word count
-  const words = scenario.split(/\s+/).filter(w=>w).length;
-  const subs = [
-    "That thought is no longer living rent-free. It has an ending now. It can rest.",
-    "You wrote it out. You gave it a last line. That's all it ever needed.",
-    "It's sealed. The loop closes here. You can go back now.",
-  ];
-  document.getElementById('sealed-sub').textContent = subs[Math.floor(Math.random()*subs.length)];
-
-  goTo(3);
+    sealBtn.disabled = false;
+    sealBtn.innerHTML = "<span>⬡</span> seal and release";
+    goTo(3);
+  }, 1000);
 }
 
 // ── BREATHING ──
@@ -706,7 +774,7 @@ function closeBreath() { document.getElementById('breath-overlay').classList.rem
 function openArchive() {
   const list = document.getElementById('archive-list');
   if(!archive.length) {
-    list.innerHTML = '<div class="archive-empty">nothing sealed yet.<br>your first thought will live here.</div>';
+    list.innerHTML = '<div class="archive-empty">nothing sealed yet.</div>';
   } else {
     list.innerHTML = archive.map(e => `
       <div class="archive-entry">
@@ -738,7 +806,6 @@ document.addEventListener('keydown', e => {
     closeBreath();
     closeArchive();
   }
-  // Enter to continue from song input
   if(e.key==='Enter' && document.getElementById('s1').classList.contains('active')) {
     e.preventDefault();
     goToScenario();
@@ -748,7 +815,6 @@ document.addEventListener('keydown', e => {
 // ── UTILS ──
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-// Update archive count on landing
 function updateLandingArchiveCount(){
   const c = document.getElementById('archive-count');
   if(c && archive.length > 0) c.textContent = archive.length+' thoughts sealed';
