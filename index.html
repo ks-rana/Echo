@@ -3,187 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Main Character Archive</title>
+    <title>The Archive | Digital Peace</title>
     <style>
         :root {
-            --bg: #0f0f0f;
-            --card: #1a1a1a;
-            --accent: #ff79c6;
-            --text: #eee;
-            --sub: #888;
+            --soft-pink: #fce4ec;
+            --deep-rose: #880e4f;
+            --glass: rgba(255, 255, 255, 0.1);
+            --accent: #ff85a1;
         }
 
         body {
-            background-color: var(--bg);
-            color: var(--text);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 100%);
+            color: #fff;
+            font-family: 'Helvetica Neue', sans-serif;
+            min-height: 100vh;
             display: flex;
+            align-items: center;
             justify-content: center;
-            padding: 40px 20px;
+            margin: 0;
+            overflow-x: hidden;
         }
 
-        .container {
-            width: 100%;
-            max-width: 500px;
-            background: var(--card);
-            padding: 30px;
-            border-radius: 24px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border: 1px solid #333;
+        /* The Glass Card */
+        .glass-card {
+            width: 90%;
+            max-width: 450px;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 32px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+            animation: slideUp 0.8s ease-out;
         }
 
-        h1 { font-size: 1.5rem; margin-bottom: 5px; color: var(--accent); }
-        p.subtitle { color: var(--sub); font-size: 0.9rem; margin-bottom: 25px; }
-
-        textarea {
-            width: 100%;
-            background: #252525;
-            border: 1px solid #444;
-            border-radius: 15px;
-            padding: 15px;
-            color: white;
-            font-size: 1rem;
-            resize: none;
-            box-sizing: border-box;
-            margin-bottom: 20px;
-        }
-
-        .mood-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 25px;
-        }
-
-        .ending-opt {
-            background: #333;
-            border: 1px solid #444;
-            padding: 12px;
-            border-radius: 12px;
-            color: white;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: 0.3s;
-        }
-
-        .ending-opt:hover { background: var(--accent); border-color: var(--accent); color: black; }
-
-        #output-area {
-            display: none;
-            background: #252525;
-            padding: 20px;
-            border-radius: 15px;
-            border-left: 4px solid var(--accent);
-            margin-bottom: 20px;
-            animation: fadeIn 0.5s ease;
-        }
-
-        #output-text { font-style: italic; line-height: 1.6; color: #ddd; }
-        
-        .punchline { 
-            display: block; 
-            margin-top: 15px; 
-            font-weight: bold; 
-            color: var(--accent); 
-            font-style: normal;
-        }
-
-        .seal-btn {
-            width: 100%;
-            padding: 15px;
-            background: transparent;
-            border: 2px solid var(--accent);
-            color: var(--accent);
-            border-radius: 50px;
-            font-weight: bold;
-            cursor: pointer;
+        h1 {
+            font-weight: 300;
+            letter-spacing: 4px;
             text-transform: uppercase;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: var(--accent);
+        }
+
+        .subtitle {
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-bottom: 30px;
             letter-spacing: 1px;
         }
 
-        .seal-btn:hover { background: var(--accent); color: black; }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <h1>The Archive</h1>
-    <p class="subtitle">Dump your delusions. Seal the lore. Go live.</p>
-
-    <textarea id="scenario-input" rows="5" placeholder="Rambling goes here... (e.g. the prince chasing me to the cafe)"></textarea>
-
-    <div class="mood-grid">
-        <button class="ending-opt" onclick="processDrama('giggling')">🤭 Giggling & Kicking Feet</button>
-        <button class="ending-opt" onclick="processDrama('sobbing')">😭 Sobbing like a baby</button>
-        <button class="ending-opt" onclick="processDrama('delusional')">💅 It was never that deep</button>
-        <button class="ending-opt" onclick="processDrama('cinematic')">🎬 Straight up movie scene</button>
-    </div>
-
-    <div id="output-area">
-        <div id="output-text"></div>
-        <span id="punchline" class="punchline"></span>
-    </div>
-
-    <button id="seal-action" class="seal-btn" style="display:none;" onclick="sealIt()">Seal the Chapter</button>
-</div>
-
-<script>
-    function processDrama(tone) {
-        const input = document.getElementById('scenario-input').value;
-        if(!input) return alert("Write something first, bestie.");
-
-        const outputArea = document.getElementById('output-area');
-        const outputText = document.getElementById('output-text');
-        const punchline = document.getElementById('punchline');
-        const sealBtn = document.getElementById('seal-action');
-
-        // 1. DYNAMIC REWRITE LOGIC
-        // We look for any high-drama keywords to anchor the rewrite
-        const subjects = input.match(/(prince|king|boss|intern|ceo|boy|him|her|them|character|villain|lead)/gi) || ["the main lead"];
-        const places = input.match(/(cafe|ball|palace|office|party|car|street|bedroom|castle|hospital|airport)/gi) || ["the scene"];
-        const items = input.match(/(coffee|dress|sword|phone|crown|glass slipper|laptop|rain|mask|matcha|latte)/gi) || ["the plot point"];
-        const actions = input.match(/(chasing|running|staring|fighting|crying|laughing|ignoring|hiding|waiting|whispering)/gi) || ["acting up"];
-
-        const s = subjects[0];
-        const l = places[0];
-        const o = items[0];
-        const a = actions[0];
-
-        // 2. THE WATTPAD-STYLE SUMMARIES
-        const rewrites = [
-            `The air in the ${l} was thick with the kind of tension that only happens in slow-burn fanfics. You were ${a} like the world depended on it, but your eyes kept drifting back to the ${o}. Meanwhile, the ${s} was watching you with that 'you're the only one' look. It's giving main character behavior. It's giving the plot is peaking.`,
-            `The lighting was hitting perfectly as you left the ${l} behind. Whether it was the ${o} or the way the ${s} was ${a} in the background, everything felt cinematic. You aren't just in the scenario; you ARE the scenario.`,
-            `Honestly, the way the ${s} was ${a} in the middle of the ${l} just for a ${o}? It's iconic. It’s high-stakes, high-drama, and high-key the best thing that’s happened this season.`
-        ];
-
-        // 3. TONE-SPECIFIC ENDINGS
-        const endings = {
-            giggling: "The tension is actually illegal. He's obsessed. It's canon now. 🤭",
-            sobbing: "It’s giving 'unfinished business' in the most tragic, Pinterest-pretty way. 😭",
-            delusional: "Wait, the ${s} is actually so mid. This was a non-canon filler episode. Moving on. 💅",
-            cinematic: "Roll credits as you walk away. You absolutely ate that performance. 🎬"
-        };
-
-        // Inject the text
-        outputArea.style.display = "block";
-        outputText.innerText = rewrites[Math.floor(Math.random() * rewrites.length)];
-        punchline.innerText = endings[tone].replace('${s}', s);
-        sealBtn.style.display = "block";
-    }
-
-    function sealIt() {
-        const prompts = [
-            "Go check your reflection. Your hair looks too good for this much drama.",
-            "Drink some water. Daydreaming is a workout, stay hydrated.",
-            "Name 3 things in your room that are 'your aesthetic' to come back to earth.",
-            "Go text your bestie. This chapter is archived. 🕊️"
-        ];
-        alert(prompts[Math.floor(Math.random() * prompts.length)]);
-        location.reload(); // Clears everything once "sealed"
-    }
-</script>
-
-</body>
-</html>
+        /* Stylish Input */
+        textarea {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 20px;
+            color: #eee;
+            font-family: inherit;
+            font-size: 0.95rem;
+            resize: none;
+            outline
